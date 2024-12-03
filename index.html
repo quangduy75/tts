@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đọc thơ</title>
+    <title>Văn bản sang giọng đọc</title>
     <!-- ResponsiveVoice API -->
     <script src="https://code.responsivevoice.org/responsivevoice.js?key=EQD1l7rq"></script>
     <!-- Bootstrap CSS -->
@@ -11,7 +11,7 @@
 </head>
 <body>
     <div class="container mt-5">
-        <h1 class="text-center mb-4">Đọc tiếng Việt</h1>
+        <h1 class="text-center mb-4">Văn bảng sang giọng đọc</h1>
         <div class="mb-3">
             <label for="textInput" class="form-label">Nhập văn bản để đọc:</label>
             <textarea id="textInput" class="form-control" rows="5" placeholder="Nhập nội dung tại đây..."></textarea>
@@ -19,9 +19,14 @@
         <div class="mb-3">
             <label for="voiceSelect" class="form-label">Chọn giọng đọc:</label>
             <select id="voiceSelect" class="form-select">
-                <option value="Vietnamese Male">Nam</option>
                 <option value="Vietnamese Female">Nữ</option>
+                <option value="Vietnamese Male">Nam</option>
             </select>
+        </div>
+        <div class="mb-3">
+            <label for="speedRange" class="form-label">Điều chỉnh tốc độ đọc (0.5 chậm - 2.0 nhanh):</label>
+            <input type="range" id="speedRange" class="form-range" min="0.5" max="2.0" step="0.1" value="1">
+            <div id="speedValue" class="text-muted">Tốc độ hiện tại: 1.0</div>
         </div>
         <div class="text-center">
             <button class="btn btn-primary me-2" onclick="readText()">🔊 Đọc văn bản</button>
@@ -39,17 +44,24 @@
         let audioChunks = [];
         let audioBlob;
 
-        // Đọc văn bản với giọng đọc được chọn
+        // Cập nhật hiển thị giá trị tốc độ khi thay đổi thanh kéo
+        document.getElementById("speedRange").addEventListener("input", function () {
+            const speed = this.value;
+            document.getElementById("speedValue").innerText = `Tốc độ hiện tại: ${speed}`;
+        });
+
+        // Đọc văn bản với giọng đọc và tốc độ được chọn
         function readText() {
             const text = document.getElementById("textInput").value;
             const voice = document.getElementById("voiceSelect").value;
+            const speed = document.getElementById("speedRange").value;
 
             if (!text.trim()) {
                 alert("Vui lòng nhập văn bản để đọc.");
                 return;
             }
 
-            responsiveVoice.speak(text, voice, { rate: 1 });
+            responsiveVoice.speak(text, voice, { rate: parseFloat(speed) });
         }
 
         // Bắt đầu ghi âm
