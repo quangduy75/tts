@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Text-to-Speech Demo</title>
+    <title>Đọc thơ</title>
     <!-- ResponsiveVoice API -->
     <script src="https://code.responsivevoice.org/responsivevoice.js?key=EQD1l7rq"></script>
     <!-- Bootstrap CSS -->
@@ -11,28 +11,88 @@
 </head>
 <body>
     <div class="container mt-5">
-        <h1 class="text-center mb-4">Đọc tiếng Việt</h1>
+        <h1 class="text-center mb-4">Text-to-Speech for Vietnamese</h1>
         <div class="mb-3">
-            <label for="textInput" class="form-label">Enter text to read:</label>
-            <textarea id="textInput" class="form-control" rows="5" placeholder="Type your text here..."></textarea>
+            <label for="textInput" class="form-label">Nhập văn bản để đọc:</label>
+            <textarea id="textInput" class="form-control" rows="5" placeholder="Nhập nội dung tại đây..."></textarea>
+        </div>
+        <div class="mb-3">
+            <label for="voiceSelect" class="form-label">Chọn giọng đọc:</label>
+            <select id="voiceSelect" class="form-select">
+                <option value="Vietnamese Male">Nam</option>
+                <option value="Vietnamese Female">Nữ</option>
+            </select>
         </div>
         <div class="text-center">
-            <button class="btn btn-primary" onclick="readText()">🔊 Read Text</button>
+            <button class="btn btn-primary me-2" onclick="readText()">🔊 Đọc văn bản</button>
+            <button class="btn btn-success me-2" onclick="startRecording()">🎙️ Bắt đầu ghi âm</button>
+            <button class="btn btn-danger" onclick="stopRecording()">⏹️ Dừng ghi âm</button>
+        </div>
+        <div class="mt-3">
+            <p><strong>Tải xuống âm thanh đã ghi:</strong></p>
+            <a id="downloadLink" class="btn btn-secondary" style="display: none;">Tải âm thanh</a>
         </div>
     </div>
 
     <script>
+        let mediaRecorder;
+        let audioChunks = [];
+        let audioBlob;
+
+        // Đọc văn bản với giọng đọc được chọn
         function readText() {
             const text = document.getElementById("textInput").value;
+            const voice = document.getElementById("voiceSelect").value;
 
             if (!text.trim()) {
-                alert("Please enter some text to read.");
+                alert("Vui lòng nhập văn bản để đọc.");
                 return;
             }
 
-            // Sử dụng ResponsiveVoice để đọc văn bản
-            responsiveVoice.speak(text, "Vietnamese Female", { rate: 1 });
+            responsiveVoice.speak(text, voice, { rate: 1 });
+        }
 
+        // Bắt đầu ghi âm
+        function startRecording() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const dest = audioContext.createMediaStreamDestination();
+            const utterance = new SpeechSynthesisUtterance(document.getElementById("textInput").value);
+            utterance.lang = "vi-VN";
+
+            const audioSource = audioContext.createMediaStreamSource(dest.stream);
+            mediaRecorder = new MediaRecorder(audioSource.stream);
+
+            mediaRecorder.ondataavailable = (e) => {
+                audioChunks.push(e.data);
+            };
+
+            mediaRecorder.onstop = () => {
+                audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+                audioChunks = [];
+                showDownloadLink(audioBlob);
+            };
+
+            speechSynthesis.speak(utterance);
+            audioSource.connect(dest);
+            mediaRecorder.start();
+        }
+
+        // Dừng ghi âm
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state === "recording") {
+                mediaRecorder.stop();
+            } else {
+                alert("Ghi âm chưa được bắt đầu!");
+            }
+        }
+
+        // Hiển thị liên kết tải xuống âm thanh
+        function showDownloadLink(blob) {
+            const url = URL.createObjectURL(blob);
+            const downloadLink = document.getElementById("downloadLink");
+            downloadLink.href = url;
+            downloadLink.download = "recorded-audio.webm";
+            downloadLink.style.display = "inline-block";
         }
     </script>
 </body>
