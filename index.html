@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Văn bản sang giọng đọc</title>
+    <title>Text-to-Speech with Optional Background Music</title>
     <!-- ResponsiveVoice API -->
     <script src="https://code.responsivevoice.org/responsivevoice.js?key=EQD1l7rq"></script>
     <!-- Bootstrap CSS -->
@@ -11,7 +11,7 @@
 </head>
 <body>
     <div class="container mt-5">
-        <h1 class="text-center mb-4">Văn bảng sang giọng đọc</h1>
+        <h1 class="text-center mb-4">Text-to-Speech with Background Music</h1>
         <div class="mb-3">
             <label for="textInput" class="form-label">Nhập văn bản để đọc:</label>
             <textarea id="textInput" class="form-control" rows="5" placeholder="Nhập nội dung tại đây..."></textarea>
@@ -19,8 +19,8 @@
         <div class="mb-3">
             <label for="voiceSelect" class="form-label">Chọn giọng đọc:</label>
             <select id="voiceSelect" class="form-select">
-                <option value="Vietnamese Female">Nữ</option>
                 <option value="Vietnamese Male">Nam</option>
+                <option value="Vietnamese Female">Nữ</option>
             </select>
         </div>
         <div class="mb-3">
@@ -28,8 +28,14 @@
             <input type="range" id="speedRange" class="form-range" min="0.5" max="2.0" step="0.1" value="1">
             <div id="speedValue" class="text-muted">Tốc độ hiện tại: 1.0</div>
         </div>
+        <div class="mb-3">
+            <label for="musicSelect" class="form-label">Chọn nhạc nền (Tùy chọn):</label>
+            <select id="musicSelect" class="form-select">
+                <option value="">Không dùng nhạc nền</option>
+            </select>
+        </div>
         <div class="text-center">
-            <button class="btn btn-primary me-2" onclick="readText()">🔊 Đọc văn bản</button>
+            <button class="btn btn-primary me-2" onclick="playWithMusic()">🔊 Đọc với nhạc nền</button>
             <button class="btn btn-success me-2" onclick="startRecording()">🎙️ Bắt đầu ghi âm</button>
             <button class="btn btn-danger" onclick="stopRecording()">⏹️ Dừng ghi âm</button>
         </div>
@@ -39,40 +45,78 @@
         </div>
     </div>
 
+    <audio id="backgroundMusic" loop></audio>
+
     <script>
         let mediaRecorder;
         let audioChunks = [];
         let audioBlob;
 
-        // Cập nhật hiển thị giá trị tốc độ khi thay đổi thanh kéo
+        // Cập nhật tốc độ khi thay đổi thanh kéo
         document.getElementById("speedRange").addEventListener("input", function () {
             const speed = this.value;
             document.getElementById("speedValue").innerText = `Tốc độ hiện tại: ${speed}`;
         });
 
-        // Đọc văn bản với giọng đọc và tốc độ được chọn
-        function readText() {
+        // Tải danh sách file nhạc từ thư mục music
+        function loadMusicFiles() {
+            const musicSelect = document.getElementById("musicSelect");
+
+            // Mô phỏng danh sách file nhạc từ thư mục music
+            const musicFiles = ["music1.mp3", "music2.mp3", "music3.mp3"];
+
+            musicFiles.forEach(file => {
+                const option = document.createElement("option");
+                option.value = file;
+                option.textContent = file;
+                musicSelect.appendChild(option);
+            });
+        }
+
+        // Phát giọng đọc với nhạc nền
+        function playWithMusic() {
             const text = document.getElementById("textInput").value;
             const voice = document.getElementById("voiceSelect").value;
             const speed = document.getElementById("speedRange").value;
+            const musicSelect = document.getElementById("musicSelect").value;
+            const music = document.getElementById("backgroundMusic");
 
             if (!text.trim()) {
                 alert("Vui lòng nhập văn bản để đọc.");
                 return;
             }
 
-            responsiveVoice.speak(text, voice, { rate: parseFloat(speed) });
+            if (musicSelect) {
+                music.src = `music/${musicSelect}`;
+                music.volume = 0.5;
+                music.play();
+            }
+
+            responsiveVoice.speak(text, voice, {
+                rate: parseFloat(speed),
+                onend: () => {
+                    if (musicSelect) {
+                        music.pause();
+                        music.currentTime = 0;
+                    }
+                }
+            });
         }
 
-        // Bắt đầu ghi âm
+        // Bắt đầu ghi âm với nhạc nền
         function startRecording() {
             const audioContext = new (window.AudioContext || window.webkitAudioContext)();
             const dest = audioContext.createMediaStreamDestination();
+            const music = document.getElementById("backgroundMusic");
+
+            const musicSource = audioContext.createMediaElementSource(music);
+            musicSource.connect(dest);
+
             const utterance = new SpeechSynthesisUtterance(document.getElementById("textInput").value);
             utterance.lang = "vi-VN";
 
-            const audioSource = audioContext.createMediaStreamSource(dest.stream);
-            mediaRecorder = new MediaRecorder(audioSource.stream);
+            const utteranceSource = audioContext.createMediaStreamSource(dest.stream);
+            mediaRecorder = new MediaRecorder(utteranceSource.stream);
 
             mediaRecorder.ondataavailable = (e) => {
                 audioChunks.push(e.data);
@@ -84,28 +128,37 @@
                 showDownloadLink(audioBlob);
             };
 
+            if (music.src) {
+                music.play();
+            }
+
             speechSynthesis.speak(utterance);
-            audioSource.connect(dest);
             mediaRecorder.start();
         }
 
         // Dừng ghi âm
         function stopRecording() {
             if (mediaRecorder && mediaRecorder.state === "recording") {
+                const music = document.getElementById("backgroundMusic");
+                music.pause();
+                music.currentTime = 0;
                 mediaRecorder.stop();
             } else {
                 alert("Ghi âm chưa được bắt đầu!");
             }
         }
 
-        // Hiển thị liên kết tải xuống âm thanh
+        // Hiển thị liên kết tải xuống
         function showDownloadLink(blob) {
             const url = URL.createObjectURL(blob);
             const downloadLink = document.getElementById("downloadLink");
             downloadLink.href = url;
-            downloadLink.download = "recorded-audio.webm";
+            downloadLink.download = "recorded-audio-with-music.webm";
             downloadLink.style.display = "inline-block";
         }
+
+        // Tải danh sách nhạc khi trang được tải
+        window.onload = loadMusicFiles;
     </script>
 </body>
 </html>
