@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>English Quiz with TTS</title>
+    <!-- ResponsiveVoice API -->
+    <script src="https://code.responsivevoice.org/responsivevoice.js?key=EQD1l7rq"></script>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mt-4 mb-4">English Quiz</h1>
+        <div id="quizContainer"></div>
+    </div>
+    
+    <script>
+        // Dữ liệu mẫu câu hỏi
+        const questions = [
+            {
+                question: "What is the capital of France?",
+                options: ["Paris", "London", "Berlin", "Madrid"],
+                correctAnswer: "Paris"
+            },
+            {
+                question: "Who wrote 'Hamlet'?",
+                options: ["Shakespeare", "Dickens", "Hemingway", "Fitzgerald"],
+                correctAnswer: "Shakespeare"
+            }
+        ];
+
+        // Hiển thị câu hỏi
+        function displayQuestions() {
+            const quizContainer = document.getElementById("quizContainer");
+            questions.forEach((question, index) => {
+                const questionDiv = document.createElement("div");
+                questionDiv.classList.add("card", "mb-3", "p-3");
+                questionDiv.innerHTML = `
+                    <p>
+                        <strong>${index + 1}. ${question.question}</strong>
+                        <button class="btn btn-sm btn-outline-secondary" onclick="readQuestionWithResponsiveVoice('${question.question}')">🔊</button>
+                    </p>
+                    ${question.options.map(option => `
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="q${index}" value="${option}" id="q${index}_${option}">
+                            <label class="form-check-label" for="q${index}_${option}">
+                                ${option}
+                            </label>
+                        </div>
+                    `).join('')}
+                `;
+                quizContainer.appendChild(questionDiv);
+            });
+        }
+
+        // Hàm đọc câu hỏi
+        function readQuestionWithResponsiveVoice(text) {
+            responsiveVoice.speak(text, "US English Female"); // Sử dụng giọng nữ tiếng Anh
+        }
+
+        // Hiển thị câu hỏi khi trang tải
+        displayQuestions();
+    </script>
+</body>
+</html>
